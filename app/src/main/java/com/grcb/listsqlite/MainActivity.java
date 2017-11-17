@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -34,9 +35,7 @@ public class MainActivity extends Activity {
             editText = findViewById(R.id.editTextId);
             editText.callOnClick();
             listView = findViewById(R.id.listViewId);
-            arrayListNotas = new ArrayList<>();
             arrayListId = new ArrayList<>();
-
 
             sqLiteDatabase = openOrCreateDatabase("notes", MODE_PRIVATE, null);
 
@@ -47,20 +46,20 @@ public class MainActivity extends Activity {
             buttonSalvar.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    String note = editText.getText().toString();
-                    salvarNota(note);
+                    salvarNota(editText.getText().toString());
                 }
             });
 
-            listView.setLongClickable(true);
-            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
                 @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
+                public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                    Log.i("Log: position ", "" + position + " / ID - " + arrayListId.get(position));
                     removerNota(arrayListId.get(position));
-                    exibirMSG("Nota removida com sucesso!");
+                    return false;
                 }
             });
+
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -70,9 +69,21 @@ public class MainActivity extends Activity {
     private void listarNotas() {
         try {
             Cursor notas = sqLiteDatabase.rawQuery("SELECT * FROM notes", null);
+            notas.moveToFirst();
 
             int idColumnIndex = notas.getColumnIndex("id");
             int noteColumnIndex = notas.getColumnIndex("note");
+
+            arrayListNotas = new ArrayList<>();
+
+            while (!notas.isAfterLast()) {
+                arrayListNotas.add(notas.getString(noteColumnIndex));
+                arrayListId.add(Integer.parseInt(notas.getString(idColumnIndex)));
+
+                Log.i("Log: ", "ID - " + notas.getString(idColumnIndex) + " / NOTA - " + notas.getString(noteColumnIndex));
+
+                notas.moveToNext();
+            }
 
             ArrayAdapter<String> adapter = new ArrayAdapter<>(
                     getApplicationContext(),
@@ -83,13 +94,12 @@ public class MainActivity extends Activity {
 
             listView.setAdapter(adapter);
 
-            notas.moveToFirst();
-            while (!notas.isAfterLast()) {
-                arrayListNotas.add(notas.getString(noteColumnIndex));
-                arrayListId.add(Integer.parseInt(notas.getString(idColumnIndex)));
-                notas.moveToNext();
-            }
+            Log.i("Log: array ", "");
 
+            for (int i=0; i > arrayListId.size(); i++ ) {
+                Log.i("Log: ", "id - " + arrayListId + " / nota - " + arrayListNotas.get(i));
+            }
+            
             notas.close();
         } catch (Exception e) {
             //e.printStackTrace();
@@ -103,10 +113,11 @@ public class MainActivity extends Activity {
                 exibirMSG("Digite algo para salvar!");
             } else {
                 sqLiteDatabase.execSQL("INSERT INTO notes (note) VALUES ('" + note + "')");
-                listarNotas();
 
                 editText.setText(null);
                 exibirMSG("Nota salva com sucesso!");
+
+                listarNotas();
             }
         } catch (Exception e) {
             //e.printStackTrace();
@@ -114,7 +125,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void removerNota(final Integer id) {
+    private void removerNota(final Integer idToRemove) {
         try {
             AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this);
 
@@ -140,9 +151,10 @@ public class MainActivity extends Activity {
             dialog.setPositiveButton("Sim", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    sqLiteDatabase.execSQL("DELETE FROM notes WHERE id=" + id);
-                    listarNotas();
+                    sqLiteDatabase.execSQL("DELETE FROM notes WHERE id=" + idToRemove);
                     exibirMSG("Nota excluída com sucesso!");
+                    Log.i("Log: ", "id removido: " + idToRemove);
+                    listarNotas();
                 }
             });
 
