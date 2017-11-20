@@ -35,7 +35,6 @@ public class MainActivity extends Activity {
             editText = findViewById(R.id.editTextId);
             editText.callOnClick();
             listView = findViewById(R.id.listViewId);
-            arrayListId = new ArrayList<>();
 
             sqLiteDatabase = openOrCreateDatabase("notes", MODE_PRIVATE, null);
 
@@ -53,8 +52,7 @@ public class MainActivity extends Activity {
             listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
                 @Override
                 public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                    Log.i("Log: position ", "" + position + " / ID - " + arrayListId.get(position));
-                    removerNota(arrayListId.get(position));
+                    removerNota(position);
                     return false;
                 }
             });
@@ -74,14 +72,12 @@ public class MainActivity extends Activity {
             int idColumnIndex = notas.getColumnIndex("id");
             int noteColumnIndex = notas.getColumnIndex("note");
 
+            arrayListId = new ArrayList<>();
             arrayListNotas = new ArrayList<>();
 
             while (!notas.isAfterLast()) {
                 arrayListNotas.add(notas.getString(noteColumnIndex));
                 arrayListId.add(Integer.parseInt(notas.getString(idColumnIndex)));
-
-                Log.i("Log: ", "ID - " + notas.getString(idColumnIndex) + " / NOTA - " + notas.getString(noteColumnIndex));
-
                 notas.moveToNext();
             }
 
@@ -93,17 +89,10 @@ public class MainActivity extends Activity {
             );
 
             listView.setAdapter(adapter);
-
-            Log.i("Log: array ", "");
-
-            for (int i=0; i > arrayListId.size(); i++ ) {
-                Log.i("Log: ", "id - " + arrayListId + " / nota - " + arrayListNotas.get(i));
-            }
-            
             notas.close();
         } catch (Exception e) {
-            //e.printStackTrace();
             exibirMSG(e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -120,12 +109,12 @@ public class MainActivity extends Activity {
                 listarNotas();
             }
         } catch (Exception e) {
-            //e.printStackTrace();
             exibirMSG(e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    private void removerNota(final Integer idToRemove) {
+    private void removerNota(final Integer position) {
         try {
             AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this);
 
@@ -151,9 +140,9 @@ public class MainActivity extends Activity {
             dialog.setPositiveButton("Sim", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
+                    Integer idToRemove = arrayListId.get(position);
                     sqLiteDatabase.execSQL("DELETE FROM notes WHERE id=" + idToRemove);
                     exibirMSG("Nota excluída com sucesso!");
-                    Log.i("Log: ", "id removido: " + idToRemove);
                     listarNotas();
                 }
             });
@@ -163,6 +152,7 @@ public class MainActivity extends Activity {
 
         } catch (Exception e) {
             exibirMSG(e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -171,6 +161,7 @@ public class MainActivity extends Activity {
             Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             exibirMSG(e.getMessage());
+            e.printStackTrace();
         }
     }
 
